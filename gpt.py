@@ -224,3 +224,113 @@ print("next_id:", next_id)
 next_character = id_to_char[next_id.item()]
 
 print("next_character:", next_character)
+
+# --------------------------------------------------
+# 15. Calculate loss
+# --------------------------------------------------
+
+loss = torch.nn.functional.cross_entropy(
+    model_logits,
+    y
+)
+
+print("loss:", loss)
+
+# --------------------------------------------------
+# 16. Calculate gradients
+# --------------------------------------------------
+
+linear_layer.zero_grad()
+
+loss.backward()
+
+# --------------------------------------------------
+# 17. Update model parameters
+# --------------------------------------------------
+
+learning_rate = 0.01
+
+with torch.no_grad():
+    for parameter in linear_layer.parameters():
+        parameter -= learning_rate * parameter.grad
+
+# --------------------------------------------------
+# 18. Train the model
+# --------------------------------------------------
+
+learning_rate = 0.01
+
+for step in range(100):
+
+    # 1. Make predictions
+    model_logits = linear_layer(x_embeddings_with_position)
+
+    # 2. Calculate loss
+    loss = torch.nn.functional.cross_entropy(model_logits, y)
+
+    # 3. Clear old gradients
+    linear_layer.zero_grad()
+
+    # 4. Calculate new gradients
+    loss.backward()
+
+    # 5. Update weights and bias
+    with torch.no_grad():
+        for parameter in linear_layer.parameters():
+            parameter -= learning_rate * parameter.grad
+
+    # 6. Print loss
+    if step % 10 == 0:
+        print("step:", step, "loss:", loss.item())
+
+# --------------------------------------------------
+# 19. Check the final loss
+# --------------------------------------------------
+
+model_logits = linear_layer(x_embeddings_with_position)
+
+final_loss = torch.nn.functional.cross_entropy(
+    model_logits,
+    y
+)
+
+print("final loss:", final_loss.item())
+
+# --------------------------------------------------
+# 20. Get the model's prediction
+# --------------------------------------------------
+
+last_position_logits = model_logits[-1]
+
+predicted_id = torch.argmax(last_position_logits)
+
+predicted_character = id_to_char[predicted_id.item()]
+
+print("predicted_id:", predicted_id)
+print("predicted_character:", predicted_character)
+
+# --------------------------------------------------
+# 21. Convert last position logits to probabilities
+# --------------------------------------------------
+
+last_position_probs = torch.softmax(
+    last_position_logits,
+    dim=0
+)
+
+print("last_position_probs:", last_position_probs)
+print("sum:", last_position_probs.sum())
+
+# --------------------------------------------------
+# 22. Sample from the model's probabilities
+# --------------------------------------------------
+
+sampled_id = torch.multinomial(
+    last_position_probs,
+    num_samples=1
+)
+
+sampled_character = id_to_char[sampled_id.item()]
+
+print("sampled_id:", sampled_id)
+print("sampled_character:", sampled_character)
