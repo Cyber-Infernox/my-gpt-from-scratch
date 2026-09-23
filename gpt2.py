@@ -174,3 +174,220 @@ print(
     "combined embeddings shape:",
     x_embeddings_with_position.shape
 )
+
+# ==================================================
+# 12. Create linear layer
+# ==================================================
+
+linear_layer = torch.nn.Linear(
+    embedding_dim,
+    vocab_size
+)
+
+print("\nLinear layer:", linear_layer)
+
+
+# ==================================================
+# 13. Create model logits
+# ==================================================
+
+model_logits = linear_layer(
+    x_embeddings_with_position
+)
+
+print(
+    "model_logits shape:",
+    model_logits.shape
+)
+
+# ==================================================
+# 14. Calculate loss
+# ==================================================
+
+B, T, C = model_logits.shape
+
+print("\nB:", B)
+print("T:", T)
+print("C:", C)
+
+# ==================================================
+# 15. Convert logits to probabilities
+# ==================================================
+
+model_probs = torch.softmax(
+    model_logits,
+    dim=2
+)
+
+print(
+    "\nmodel_probs shape:",
+    model_probs.shape
+)
+
+print(
+    "probability sum:",
+    model_probs[0, 0].sum()
+)
+
+# ==================================================
+# 16. Calculate loss
+# ==================================================
+
+B, T, C = model_logits.shape
+
+print("\nB:", B)
+print("T:", T)
+print("C:", C)
+
+
+model_logits_flat = model_logits.view(
+    B * T,
+    C
+)
+
+y_flat = y.view(
+    B * T
+)
+
+print(
+    "model_logits_flat shape:",
+    model_logits_flat.shape
+)
+
+print(
+    "y_flat shape:",
+    y_flat.shape
+)
+
+
+loss = torch.nn.functional.cross_entropy(
+    model_logits_flat,
+    y_flat
+)
+
+print("loss:", loss.item())
+
+# ==================================================
+# 17. Train the model
+# ==================================================
+
+learning_rate = 0.01
+
+for step in range(1000):
+
+    # Make predictions
+    model_logits = linear_layer(
+        x_embeddings_with_position
+    )
+
+    # Get the shape
+    B, T, C = model_logits.shape
+
+    # Flatten predictions and targets
+    model_logits_flat = model_logits.view(
+        B * T,
+        C
+    )
+
+    y_flat = y.view(
+        B * T
+    )
+
+    # Calculate loss
+    loss = torch.nn.functional.cross_entropy(
+        model_logits_flat,
+        y_flat
+    )
+
+    # Remove old gradients
+    linear_layer.zero_grad()
+
+    # Calculate new gradients
+    loss.backward()
+
+    # Update parameters
+    with torch.no_grad():
+
+        for parameter in linear_layer.parameters():
+
+            parameter -= learning_rate * parameter.grad
+
+    # Print loss every 100 steps
+    if step % 100 == 0:
+
+        print(
+            "step:",
+            step,
+            "loss:",
+            loss.item()
+        )
+
+# ==================================================
+# 18. Get model predictions
+# ==================================================
+
+predicted_ids = torch.argmax(
+    model_logits,
+    dim=2
+)
+
+print("\npredicted_ids:")
+print(predicted_ids)
+
+print("predicted_ids shape:", predicted_ids.shape)
+
+# ==================================================
+# 19. Convert predicted IDs to characters
+# ==================================================
+
+print("\nPredictions:")
+
+for i in range(len(predicted_ids)):
+
+    predicted_text = ""
+
+    for token_id in predicted_ids[i]:
+
+        predicted_text += id_to_char[token_id.item()]
+
+    print(
+        "predicted:",
+        predicted_text
+    )
+
+# ==================================================
+# 20. Compare predictions with targets
+# ==================================================
+correct = predicted_ids == y
+
+print("\nCorrect predictions:")
+print(correct)
+
+# ==================================================
+# 21. Show input, target, and prediction
+# ==================================================
+print("\nDetailed predictions:")
+
+for i in range(len(x)):
+
+    input_text = ""
+    target_text = ""
+    predicted_text = ""
+
+    for token_id in x[i]:
+        input_text += id_to_char[token_id.item()]
+
+    for token_id in y[i]:
+        target_text += id_to_char[token_id.item()]
+
+    for token_id in predicted_ids[i]:
+        predicted_text += id_to_char[token_id.item()]
+
+    print(
+        "input:",
+        input_text,
+        "| target:",
+        target_text,
+        "| predicted:",
+        predicted_text
+    )
